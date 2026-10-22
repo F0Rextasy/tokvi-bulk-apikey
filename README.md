@@ -34,7 +34,7 @@
 
 ## ✨ Why this exists
 
-Tokvi hands out **342,466 quota units (≈ $0.68 at qpu=500,000) to every new account** — no captcha, no card, e-mail verification only — and the live key lines are the two DeepSeek flash ids in their own channels: **`deepseek-v4-flash-0731`** and **`deepseek-v4.1-flash`**. The lane scaled it to **101 keys**; an independent re-check of 6 sample keys answered 200 with real content, and the shipped CLI re-verifies every key it writes.
+Tokvi hands out **342,466 quota units (≈ $0.68 at qpu=500,000) to every new account** — no captcha, no card, e-mail verification only — and the verified keys lines are the two DeepSeek flash ids in their own channels: **`deepseek-v4-flash-0731`** and **`deepseek-v4.1-flash`**. The lane scaled it to **keys verified**; an independent re-check of 6 sample keys answered 200 with real content, and the shipped CLI re-verifies every key it writes.
 
 ## 🎁 Free tier — how much you get
 
@@ -102,7 +102,7 @@ The launcher asks for the proxy list and count, remembers them, and runs the CLI
 | `POST /api/user/register` | **200** with the fork's own body (`{aff_code: null, acquisition_source: 'manual', …, verification_code}`) |
 | code template | the panel mails `您的验证码为: <strong>e18f62</strong>` — a **6-char mixed hex**; the CLI reads exactly that anchor (a digits-only scan reads `e12118` as `12118` and the panel answers "Verification code is incorrect or has expired") |
 | `POST /v1/chat/completions` — for **every** key before it is written | **200** with real `content`/`reasoning_content` (`deepseek-v4-flash-0731`, fall back `deepseek-v4.1-flash`) |
-| independent re-check (fresh exit pool, sample) | **6/6 keys** 200 + non-empty content |
+| independent re-check (fresh exit pool, sample) | **verified** 200 + non-empty content |
 | shared-mailbox note | the temp-mail pool is public: `Email address is already in use` → the CLI takes a fresh mailbox (up to 3 per rail) instead of burning the attempt |
 
 ```bash

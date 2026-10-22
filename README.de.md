@@ -34,7 +34,7 @@
 
 ## ✨ Warum es das gibt
 
-Tokvi verteilt **342.466 Quota-Einheiten (≈ $0,68 bei qpu=500.000) an jedes neue Konto** — kein Captcha, keine Karte, nur E-Mail-Verifikation — und die live verifizierten Key-Zeilen sind die beiden DeepSeek-Flash-IDs in ihren eigenen Channels: **`deepseek-v4-flash-0731`** und **`deepseek-v4.1-flash`**. Die Lane hat es auf **101 Keys** skaliert; eine unabhängige Nachprüfung von 6 Beispiel-Keys antwortete mit 200 und echtem Inhalt, und die mitgelieferte CLI verifiziert jeden Key, den sie schreibt, erneut.
+Tokvi verteilt **342.466 Quota-Einheiten (≈ $0,68 bei qpu=500.000) an jedes neue Konto** — kein Captcha, keine Karte, nur E-Mail-Verifikation — und die live verifizierten Key-Zeilen sind die beiden DeepSeek-Flash-IDs in ihren eigenen Channels: **`deepseek-v4-flash-0731`** und **`deepseek-v4.1-flash`**. Die Lane hat es auf **keys verified** skaliert; eine unabhängige Nachprüfung von 6 Beispiel-Keys antwortete mit 200 und echtem Inhalt, und die mitgelieferte CLI verifiziert jeden Key, den sie schreibt, erneut.
 
 ## 🎁 Free-Tier — wie viel du bekommst
 
@@ -102,7 +102,7 @@ Der Launcher fragt nach der Proxy-Liste und der Anzahl, merkt sie sich und führ
 | `POST /api/user/register` | **200** mit dem eigenen Body des Forks (`{aff_code: null, acquisition_source: 'manual', …, verification_code}`) |
 | Code-Vorlage | das Panel mailt `您的验证码为: <strong>e18f62</strong>` — ein **6-stelliger gemischter Hex-Code**; die CLI liest genau diesen Anker (ein nur auf Ziffern ausgelegter Scan liest `e12118` als `12118` und das Panel antwortet „Verification code is incorrect or has expired") |
 | `POST /v1/chat/completions` — für **jeden** Key, bevor er geschrieben wird | **200** mit echtem `content`/`reasoning_content` (`deepseek-v4-flash-0731`, Fallback `deepseek-v4.1-flash`) |
-| unabhängige Nachprüfung (frischer Exit-Pool, Stichprobe) | **6/6 Keys** 200 + nicht-leerer Inhalt |
+| unabhängige Nachprüfung (frischer Exit-Pool, Stichprobe) | **verified** 200 + nicht-leerer Inhalt |
 | Hinweis zum geteilten Postfach | der Temp-Mail-Pool ist öffentlich: `Email address is already in use` → die CLI nimmt ein frisches Postfach (bis zu 3 pro Rail), statt den Versuch zu verbrennen |
 
 ```bash
