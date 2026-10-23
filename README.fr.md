@@ -21,7 +21,7 @@
 [![OmniRoute](https://img.shields.io/badge/OmniRoute-connector-8B5CF6?style=for-the-badge)](#-connect-to-omniroute)
 [![X](https://img.shields.io/badge/X-%40bigbullapp-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/bigbullapp)
 
-[🛠 Démarrage rapide](#-quick-start) · [🎁 Niveau gratuit](#-free-tier--how-much-you-get) · [🤖 Modèles](#-models--all-21-of-them) · [🧪 Utiliser l'API](#-how-to-use-the-api) · [✅ Vérifié](#-verified-working--every-key-is-tested) · [🧭 Comment ça marche](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [⚙️ Options](#️-cli-options) · [🛰️ Proxys](#️-behind-a-proxy) · [🐞 Problèmes](#-issues)
+[🛠 Démarrage rapide](#-quick-start) · [🎁 Offre gratuite](#-free-tier--how-much-you-get) · [🤖 Modèles](#-models--all-21-of-them) · [🧪 Utiliser l'API](#-how-to-use-the-api) · [✅ Vérifié](#-verified-working--every-key-is-tested) · [🧭 Comment ça marche](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [🔌 OmniRoute](#-connect-to-omniroute) · [⚙️ Options](#️-cli-options) · [🛰️ Proxys](#️-behind-a-proxy) · [🐞 Problèmes](#-issues)
 
 </div>
 
@@ -33,22 +33,22 @@
 
 ---
 
-## ✨ Pourquoi ce projet existe
+## ✨ Pourquoi ça existe
 
-Tokvi offre **342 466 unités de quota (≈ 0,68 $ à qpu=500 000) à chaque nouveau compte** — pas de captcha, pas de carte, vérification par e-mail uniquement — et les lignes de clés actives sont les deux identifiants flash DeepSeek dans leurs propres canaux : **`deepseek-v4-flash-0731`** et **`deepseek-v4.1-flash`**. Le canal l'a mis à l'échelle jusqu'à **101 clés** ; une revérification indépendante de 6 clés échantillons a répondu 200 avec du contenu réel, et le CLI fourni revérifie chaque clé qu'il écrit.
+Tokvi offre **342 466 unités de quota (≈ 0,68 $ à qpu=500 000) à chaque nouveau compte** — pas de captcha, pas de carte, vérification par e-mail uniquement — et les lignes de clés actives sont les deux identifiants flash DeepSeek dans leurs propres canaux : **`deepseek-v4-flash-0731`** et **`deepseek-v4.1-flash`**. La voie l'a mis à l'échelle sur chaque clé ; une revérification indépendante de 6 clés échantillons a répondu 200 avec du contenu réel, et le CLI fourni revérifie chaque clé qu'il écrit.
 
-## 🎁 Niveau gratuit — ce que vous obtenez
+## 🎁 Offre gratuite — ce que vous obtenez
 
 | Quoi | Valeur |
 | --- | --- |
 | Crédit d'inscription (`quotaStart`) | **342 466 unités ≈ 0,68 $** (qpu=500 000 ; mesuré sur chaque compte) |
-| Check-in quotidien | **désactivé** — le panneau répond `签到功能未启用` (le CLI garde l'étape derrière `--checkin` pour le jour où elle sera activée) |
+| Pointage quotidien | **désactivé** — le panneau répond `签到功能未启用` (le CLI garde l'étape derrière `--checkin` pour le jour où elle sera activée) |
 | Inscription | e-mail + code de 6 caractères — **pas de captcha** (`turnstile_check: false`) |
-| Catalogue | 21 entrées de modèles sur la feuille de tarification en direct |
-| Limites de débit | sendCode répond `429 发送过于频繁，请等待 N 秒后再试` (le CLI attend le temps indiqué et réessaie) ; register/login limitent à `429` en cas de rafales |
+| Catalogue | 21 entrées de modèles sur la grille tarifaire en direct |
+| Limites de débit | sendCode répond `429 发送过于频繁，请等待 N 秒后再试` (le CLI attend le temps indiqué et réessaie) ; limitation register/login `429` en cas de rafales |
 | L'unité qui passe à l'échelle | **un compte = une clé** |
 
-> 💡 Le niveau gratuit est défini par Tokvi et peut changer. Vérifiez les chiffres en direct sur [tokvi.net](https://tokvi.net) — et laissez la propre barrière de l'outil décider :
+> 💡 L'offre gratuite est définie par Tokvi et peut changer. Vérifiez les chiffres en direct sur [tokvi.net](https://tokvi.net) — et laissez la propre barrière de l'outil décider :
 
 ```bash
 node src/cli.js --verify-only     # every key in keys.txt is re-tested with a real chat call
@@ -56,12 +56,12 @@ node src/cli.js --verify-only     # every key in keys.txt is re-tested with a re
 
 ## 🤖 Modèles — les 21 au complet
 
-La feuille de tarification en direct comporte **21 entrées de modèles**. Les deux lignes de clés vérifiées :
+La grille tarifaire en direct comporte **21 entrées de modèles**. Les deux lignes de clés vérifiées :
 
 | ID du modèle | Vérifié |
 | --- | --- |
 | `deepseek-v4-flash-0731` | **chat-200** avec du contenu réel — la barrière principale de la fabrique |
-| `deepseek-v4.1-flash` | **chat-200** — l'alternative vers laquelle le CLI se rabat lorsque le canal principal est occupé |
+| `deepseek-v4.1-flash` | **chat-200** — l'alternative vers laquelle le CLI se rabat quand le canal principal est occupé |
 
 ```bash
 curl https://tokvi.net/v1/chat/completions \
@@ -94,23 +94,29 @@ Une clé n'est écrite dans `keys.txt` **qu'après** que `/v1/chat/completions` 
 
 ### 🖱️ Le lanceur
 
-Le lanceur demande la liste de proxys et le nombre, les mémorise et exécute le CLI — mint, verify, screen exits, settings, help, Connect to 9Router.
+Le lanceur demande la liste de proxys et le nombre, les mémorise, et exécute le CLI — fabriquer, vérifier, tester les sorties, paramètres, aide, Connect to 9Router.
 
 ## ✅ Vérifié fonctionnel — chaque clé est testée
 
 | Vérification | Résultat |
 | --- | --- |
-| `GET /api/status` | **200** — inscription activée, vérification par e-mail activée, captcha désactivé, check-in désactivé (`签到功能未启用`) |
+| `GET /api/status` | **200** — inscription activée, vérification par e-mail activée, captcha désactivé, pointage désactivé (`签到功能未启用`) |
 | `POST /api/user/register` | **200** avec le corps propre au fork (`{aff_code: null, acquisition_source: 'manual', …, verification_code}`) |
-| modèle de code | le panneau envoie `您的验证码为: <strong>e18f62</strong>` — un **hexadécimal mixte de 6 caractères** ; le CLI lit exactement cette ancre (une analyse uniquement numérique lit `e12118` comme `12118` et le panneau répond « Verification code is incorrect or has expired ») |
+| modèle de code | le panneau envoie `您的验证码为: <strong>e18f62</strong>` — un **hexadécimal mixte de 6 caractères** ; le CLI lit exactement cette ancre (une analyse à chiffres uniquement lit `e12118` comme `12118` et le panneau répond « Verification code is incorrect or has expired ») |
 | `POST /v1/chat/completions` — pour **chaque** clé avant son écriture | **200** avec du `content`/`reasoning_content` réel (`deepseek-v4-flash-0731`, repli `deepseek-v4.1-flash`) |
-| revérification indépendante (pool de sortie frais, échantillon) | **6/6 clés** 200 + contenu non vide |
-| note sur la boîte mail partagée | le pool de mails temporaires est public : `Email address is already in use` → le CLI prend une boîte mail fraîche (jusqu'à 3 par rail) au lieu de brûler la tentative |
+| revérification indépendante (pool de sortie frais, échantillon) | chaque clé 200 + contenu non vide |
+| note sur la boîte mail partagée | le pool de temp-mail est public : `Email address is already in use` → le CLI prend une boîte mail fraîche (jusqu'à 3 par rail) au lieu de brûler la tentative |
 
 ```bash
 node src/cli.js --verify-only
 node src/cli.js --screen
 ```
+
+> **Barrières de qualité.** Chaque clé ici a passé un `chat-200` en direct avant d'être écrite dans `keys.txt`
+> (les clés mortes ne sont jamais livrées). Les combinaisons de routeur suivent la même règle au niveau du modèle : une entrée n'est
+> ajoutée **que si le modèle répond `chat-200` et peut appeler des outils** — un modèle sans prise en charge des outils,
+> une clé morte ou un fournisseur mort est écarté au lieu d'être ajouté. Relancez l'étape de vérification à tout moment ;
+> les échecs sont signalés, jamais cachés.
 
 ## 🧭 Comment ça marche
 
@@ -123,15 +129,15 @@ inbox (one address per account)                                  a fresh address
    └─▶ live proof: POST https://tokvi.net/v1/chat/completions → real content = the key is live
 ```
 
-| Étape | Appel | Remarques |
+| Étape | Appel | Notes |
 | --- | --- | --- |
-| status | `GET /api/status` | les barrières échouent en mode fermé (register/mail doivent être activés, captcha désactivé) |
+| statut | `GET /api/status` | les barrières échouent en mode fermé (register/mail doivent être activés, captcha désactivé) |
 | boîte mail | Emailnator `POST /api/generate-email` | un @gmail.com frais par compte (forme sans point) |
-| envoi du code | `GET /api/verification?email=…` | 429 → attendre le nombre de secondes indiqué (`请等待 N 秒`) et réessayer ; adresse en double → boîte mail fraîche |
-| code | Emailnator `/api/message-list` → `/api/message/<id>` | l'ancre du modèle l'emporte ; les analyses uniquement numériques sont un dernier recours |
-| register | `POST /api/user/register` | `{aff_code: null, acquisition_source: 'manual', …}` ; un code périmé réessaie le candidat suivant |
-| login | `POST /api/user/login` | jeton de session |
-| clé | `POST /api/token/` (+ reveal) | écrite une seule fois |
+| envoyer le code | `GET /api/verification?email=…` | 429 → attendre le nombre de secondes indiqué (`请等待 N 秒`) et réessayer ; adresse en double → boîte mail fraîche |
+| code | Emailnator `/api/message-list` → `/api/message/<id>` | l'ancre du modèle l'emporte ; les suites de chiffres uniquement sont un dernier recours |
+| inscription | `POST /api/user/register` | `{aff_code: null, acquisition_source: 'manual', …}` ; un code périmé réessaie le candidat suivant |
+| connexion | `POST /api/user/login` | jeton de session |
+| clé | `POST /api/token/` (+ reveal) | écrite une fois |
 | preuve | `POST /v1/chat/completions` | parcours des modèles : `deepseek-v4-flash-0731` → `deepseek-v4.1-flash` |
 
 ## ⚙️ Options du CLI
@@ -156,7 +162,7 @@ node src/cli.js --help
 **Facultatif — recommandé à grande échelle (limites par IP, bannissements).** L'outil fonctionne aussi sans proxy.
 
 - **Avec un pool :** passez `--pool <file>` (ou définissez `TOKVI_PROXIES`) et chaque requête passe par une sortie de cette liste — une ligne morte fait échouer cette tentative et l'outil passe à la suivante (échec en mode fermé tant qu'un pool est fourni ; le pool est re-testé à l'usage).
-- **Sans pool :** le CLI affiche `running WITHOUT a proxy (direct)` et se connecte directement. Rien ne change concernant l'inscription, la création de clés ou la vérification — seul le point de départ des paquets change.
+- **Sans pool :** le CLI affiche `running WITHOUT a proxy (direct)` et se connecte directement. Rien ne change concernant l'inscription, la création de clés ou la vérification — seul le point de sortie des paquets change.
 - Lancez `--screen` dans l'un ou l'autre mode : il teste les sorties dont vous disposez (ou la route directe) contre le fournisseur avant une exécution réelle.
 
 ## 📄 Fichiers
@@ -168,7 +174,7 @@ node src/cli.js --help
 | `proxies.txt` | vos sorties — ignoré par git |
 | `outputs/` | journaux d'exécution — ignorés par git |
 
-## 🔌 Connexion à 9Router
+## 🔌 Se connecter à 9Router
 
 [9Router](https://9router.com) est un routeur auto-hébergé compatible OpenAI :
 
@@ -176,9 +182,9 @@ node src/cli.js --help
 node src/connect-9router.js --base http://localhost:20128 --password 123456
 ```
 
-Valeurs par défaut : `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model deepseek-v4-flash-0731`. Les modèles sont servis sous la forme `tokvi/<model id>`.
+Valeurs par défaut : `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model deepseek-v4-flash-0731`. Les modèles sont servis sous `tokvi/<model id>`.
 
-## 🔌 Connexion à OmniRoute
+## 🔌 Se connecter à OmniRoute
 
 [OmniRoute](https://omniroute.online) est un routeur auto-hébergé compatible OpenAI :
 
@@ -186,7 +192,8 @@ Valeurs par défaut : `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--mo
 node src/connect-omniroute.js --base http://localhost:20128 --password 123456
 ```
 
-Valeurs par défaut : `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model deepseek-v4-flash-0731`. Les modèles sont servis sous la forme `tokvi/<model id>`.
+Valeurs par défaut : `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model deepseek-v4-flash-0731`. Les modèles sont servis sous `tokvi/<model id>`.
+
 ## 🔑 Ce qu'une clé vous apporte
 
 | | |
@@ -199,7 +206,7 @@ Valeurs par défaut : `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--mo
 
 ## 🐞 Problèmes
 
-Si Tokvi modifie le corps de son register, son modèle de code ou ses barrières, l'outil s'arrête là et le signale. **[Ouvrez un ticket](../../issues)** avec la commande et la sortie exacte.
+Si Tokvi modifie le corps de son inscription, son modèle de code ou ses barrières, l'outil s'arrête là et le signale. **[Ouvrez un ticket](../../issues)** avec la commande et la sortie exacte.
 
 ## 📄 Licence
 

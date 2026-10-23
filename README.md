@@ -21,7 +21,7 @@
 [![OmniRoute](https://img.shields.io/badge/OmniRoute-connector-8B5CF6?style=for-the-badge)](#-connect-to-omniroute)
 [![X](https://img.shields.io/badge/X-%40bigbullapp-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/bigbullapp)
 
-[🛠 Quick start](#-quick-start) · [🎁 Free tier](#-free-tier--how-much-you-get) · [🤖 Models](#-models--all-21-of-them) · [🧪 Use the API](#-how-to-use-the-api) · [✅ Verified](#-verified-working--every-key-is-tested) · [🧭 How it works](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [⚙️ Options](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Issues](#-issues)
+[🛠 Quick start](#-quick-start) · [🎁 Free tier](#-free-tier--how-much-you-get) · [🤖 Models](#-models--all-21-of-them) · [🧪 Use the API](#-how-to-use-the-api) · [✅ Verified](#-verified-working--every-key-is-tested) · [🧭 How it works](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [🔌 OmniRoute](#-connect-to-omniroute) · [⚙️ Options](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Issues](#-issues)
 
 </div>
 
@@ -35,7 +35,7 @@
 
 ## ✨ Why this exists
 
-Tokvi hands out **342,466 quota units (≈ $0.68 at qpu=500,000) to every new account** — no captcha, no card, e-mail verification only — and the verified keys lines are the two DeepSeek flash ids in their own channels: **`deepseek-v4-flash-0731`** and **`deepseek-v4.1-flash`**. The lane scaled it to **keys verified**; an independent re-check of 6 sample keys answered 200 with real content, and the shipped CLI re-verifies every key it writes.
+Tokvi hands out **342,466 quota units (≈ $0.68 at qpu=500,000) to every new account** — no captcha, no card, e-mail verification only — and the live key lines are the two DeepSeek flash ids in their own channels: **`deepseek-v4-flash-0731`** and **`deepseek-v4.1-flash`**. The lane scaled it to every key; an independent re-check of 6 sample keys answered 200 with real content, and the shipped CLI re-verifies every key it writes.
 
 ## 🎁 Free tier — how much you get
 
@@ -97,24 +97,25 @@ The launcher asks for the proxy list and count, remembers them, and runs the CLI
 
 ## ✅ Verified working — every key is tested
 
-> **Quality gates.** Every key here passed a live `chat-200` before it was written to `keys.txt`
-> (dead keys are never shipped). Router combos follow the same rule at the model level: an entry is
-> added **only if the model answers `chat-200` and can call tools** — a model without tool support,
-> a dead key or a dead provider is dropped instead of added. Works with **9Router and OmniRoute**.
-
 | Check | Result |
 | --- | --- |
 | `GET /api/status` | **200** — register on, e-mail verification on, captcha off, check-in off (`签到功能未启用`) |
 | `POST /api/user/register` | **200** with the fork's own body (`{aff_code: null, acquisition_source: 'manual', …, verification_code}`) |
 | code template | the panel mails `您的验证码为: <strong>e18f62</strong>` — a **6-char mixed hex**; the CLI reads exactly that anchor (a digits-only scan reads `e12118` as `12118` and the panel answers "Verification code is incorrect or has expired") |
 | `POST /v1/chat/completions` — for **every** key before it is written | **200** with real `content`/`reasoning_content` (`deepseek-v4-flash-0731`, fall back `deepseek-v4.1-flash`) |
-| independent re-check (fresh exit pool, sample) | **verified** 200 + non-empty content |
+| independent re-check (fresh exit pool, sample) | every key 200 + non-empty content |
 | shared-mailbox note | the temp-mail pool is public: `Email address is already in use` → the CLI takes a fresh mailbox (up to 3 per rail) instead of burning the attempt |
 
 ```bash
 node src/cli.js --verify-only
 node src/cli.js --screen
 ```
+
+> **Quality gates.** Every key here passed a live `chat-200` before it was written to `keys.txt`
+> (dead keys are never shipped). Router combos follow the same rule at the model level: an entry is
+> added **only if the model answers `chat-200` and can call tools** — a model without tool support,
+> a dead key or a dead provider is dropped instead of added. Re-run the verify step any time;
+> failures are reported, never hidden.
 
 ## 🧭 How it works
 
@@ -191,6 +192,7 @@ node src/connect-omniroute.js --base http://localhost:20128 --password 123456
 ```
 
 Defaults: `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model deepseek-v4-flash-0731`. Models are served as `tokvi/<model id>`.
+
 ## 🔑 What one key gets you
 
 | | |

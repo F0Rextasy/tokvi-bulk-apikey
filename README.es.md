@@ -21,7 +21,7 @@
 [![OmniRoute](https://img.shields.io/badge/OmniRoute-connector-8B5CF6?style=for-the-badge)](#-connect-to-omniroute)
 [![X](https://img.shields.io/badge/X-%40bigbullapp-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/bigbullapp)
 
-[🛠 Inicio rápido](#-quick-start) · [🎁 Nivel gratuito](#-free-tier--how-much-you-get) · [🤖 Modelos](#-models--all-21-of-them) · [🧪 Usar la API](#-how-to-use-the-api) · [✅ Verificado](#-verified-working--every-key-is-tested) · [🧭 Cómo funciona](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [⚙️ Opciones](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Problemas](#-issues)
+[🛠 Inicio rápido](#-quick-start) · [🎁 Nivel gratuito](#-free-tier--how-much-you-get) · [🤖 Modelos](#-models--all-21-of-them) · [🧪 Usa la API](#-how-to-use-the-api) · [✅ Verificado](#-verified-working--every-key-is-tested) · [🧭 Cómo funciona](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [🔌 OmniRoute](#-connect-to-omniroute) · [⚙️ Opciones](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Problemas](#-issues)
 
 </div>
 
@@ -35,20 +35,20 @@
 
 ## ✨ Por qué existe esto
 
-Tokvi reparte **342.466 unidades de cuota (≈ $0,68 con qpu=500.000) a cada cuenta nueva** — sin captcha, sin tarjeta, solo verificación por correo electrónico — y las líneas de claves activas son los dos ids flash de DeepSeek en sus propios canales: **`deepseek-v4-flash-0731`** y **`deepseek-v4.1-flash`**. El carril lo escaló a **101 claves**; una reverificación independiente de 6 claves de muestra respondió 200 con contenido real, y la CLI incluida vuelve a verificar cada clave que escribe.
+Tokvi reparte **342.466 unidades de cuota (≈ $0,68 con qpu=500.000) a cada cuenta nueva** — sin captcha, sin tarjeta, solo verificación por correo electrónico — y las líneas de claves activas son los dos ids flash de DeepSeek en sus propios canales: **`deepseek-v4-flash-0731`** y **`deepseek-v4.1-flash`**. El carril lo escaló a cada clave; una reverificación independiente de 6 claves de muestra respondió 200 con contenido real, y la CLI incluida vuelve a verificar cada clave que escribe.
 
 ## 🎁 Nivel gratuito — cuánto obtienes
 
 | Qué | Valor |
 | --- | --- |
 | Crédito de registro (`quotaStart`) | **342.466 unidades ≈ $0,68** (qpu=500.000; medido en cada cuenta) |
-| Check-in diario | **desactivado** — el panel responde `签到功能未启用` (la CLI mantiene el paso detrás de `--checkin` para el día en que se active) |
+| Registro diario | **desactivado** — el panel responde `签到功能未启用` (la CLI mantiene el paso detrás de `--checkin` para el día en que se active) |
 | Registro | correo electrónico + código de 6 caracteres — **sin captcha** (`turnstile_check: false`) |
-| Catálogo | 21 entradas de modelos en la hoja de precios activa |
-| Límites de tasa | sendCode responde `429 发送过于频繁，请等待 N 秒后再试` (la CLI espera el tiempo indicado y reintenta); register/login limitan con `429` bajo ráfagas |
+| Catálogo | 21 entradas de modelos en la hoja de precios en vivo |
+| Límites de velocidad | sendCode responde `429 发送过于频繁，请等待 N 秒后再试` (la CLI espera el tiempo indicado y reintenta); register/login limitan con `429` bajo ráfagas |
 | La unidad que escala | **una cuenta = una clave** |
 
-> 💡 El nivel gratuito lo define Tokvi y puede cambiar. Consulta los números activos en [tokvi.net](https://tokvi.net) — y deja que la propia puerta de la herramienta decida:
+> 💡 El nivel gratuito lo define Tokvi y puede cambiar. Consulta los números en vivo en [tokvi.net](https://tokvi.net) — y deja que la propia puerta de la herramienta decida:
 
 ```bash
 node src/cli.js --verify-only     # every key in keys.txt is re-tested with a real chat call
@@ -56,7 +56,7 @@ node src/cli.js --verify-only     # every key in keys.txt is re-tested with a re
 
 ## 🤖 Modelos — los 21
 
-La hoja de precios activa contiene **21 entradas de modelos**. Ambas líneas de claves verificadas:
+La hoja de precios en vivo contiene **21 entradas de modelos**. Ambas líneas de claves verificadas:
 
 | ID del modelo | Verificado |
 | --- | --- |
@@ -90,27 +90,33 @@ node src/launcher.js        # interactive: mint / verify / screen / settings
 # or: node src/cli.js --count 30
 ```
 
-Una clave se escribe en `keys.txt` **solo** después de que `/v1/chat/completions` responda 200 con contenido real; `accounts.json` guarda usuario / correo electrónico / cuota / código / grupo.
+Una clave se escribe en `keys.txt` **solo** después de que `/v1/chat/completions` responda 200 con contenido real; `accounts.json` conserva nombre de usuario / correo electrónico / cuota / código / grupo.
 
 ### 🖱️ El lanzador
 
-El lanzador pide la lista de proxies y la cantidad, las recuerda y ejecuta la CLI — acuñar, verificar, cribar salidas, ajustes, ayuda, Conectar a 9Router.
+El lanzador solicita la lista de proxies y la cantidad, las recuerda y ejecuta la CLI — acuñar, verificar, cribar salidas, ajustes, ayuda, Conectar a 9Router.
 
 ## ✅ Verificado y funcionando — cada clave se prueba
 
 | Comprobación | Resultado |
 | --- | --- |
-| `GET /api/status` | **200** — registro activado, verificación por correo activada, captcha desactivado, check-in desactivado (`签到功能未启用`) |
+| `GET /api/status` | **200** — registro activado, verificación por correo activada, captcha desactivado, registro diario desactivado (`签到功能未启用`) |
 | `POST /api/user/register` | **200** con el cuerpo propio del fork (`{aff_code: null, acquisition_source: 'manual', …, verification_code}`) |
 | plantilla del código | el panel envía `您的验证码为: <strong>e18f62</strong>` — un **hex mixto de 6 caracteres**; la CLI lee exactamente ese ancla (un escaneo solo de dígitos lee `e12118` como `12118` y el panel responde "Verification code is incorrect or has expired") |
-| `POST /v1/chat/completions` — para **cada** clave antes de escribirse | **200** con `content`/`reasoning_content` reales (`deepseek-v4-flash-0731`, con reserva `deepseek-v4.1-flash`) |
-| reverificación independiente (grupo de salida nuevo, muestra) | **6/6 claves** 200 + contenido no vacío |
+| `POST /v1/chat/completions` — para **cada** clave antes de escribirse | **200** con `content`/`reasoning_content` reales (`deepseek-v4-flash-0731`, alternativa `deepseek-v4.1-flash`) |
+| reverificación independiente (grupo de salida nuevo, muestra) | cada clave 200 + contenido no vacío |
 | nota sobre buzón compartido | el grupo de correo temporal es público: `Email address is already in use` → la CLI toma un buzón nuevo (hasta 3 por carril) en lugar de quemar el intento |
 
 ```bash
 node src/cli.js --verify-only
 node src/cli.js --screen
 ```
+
+> **Puertas de calidad.** Cada clave aquí pasó un `chat-200` en vivo antes de escribirse en `keys.txt`
+> (las claves muertas nunca se envían). Las combinaciones del router siguen la misma regla a nivel de modelo: una entrada se
+> añade **solo si el modelo responde `chat-200` y puede llamar herramientas** — un modelo sin soporte de herramientas,
+> una clave muerta o un proveedor muerto se descarta en lugar de añadirse. Vuelve a ejecutar el paso de verificación cuando quieras;
+> los fallos se reportan, nunca se ocultan.
 
 ## 🧭 Cómo funciona
 
@@ -125,7 +131,7 @@ inbox (one address per account)                                  a fresh address
 
 | Paso | Llamada | Notas |
 | --- | --- | --- |
-| estado | `GET /api/status` | las puertas fallan en cerrado (registro/correo deben estar activados, captcha desactivado) |
+| estado | `GET /api/status` | las puertas fallan cerradas (registro/correo deben estar activados, captcha desactivado) |
 | buzón | Emailnator `POST /api/generate-email` | un @gmail.com nuevo por cuenta (forma sin puntos) |
 | enviar código | `GET /api/verification?email=…` | 429 → espera los segundos indicados (`请等待 N 秒`) y reintenta; dirección duplicada → buzón nuevo |
 | código | Emailnator `/api/message-list` → `/api/message/<id>` | gana el ancla de la plantilla; los escaneos solo de dígitos son el último recurso |
@@ -155,22 +161,22 @@ node src/cli.js --help
 
 **Opcional — recomendado a escala (límites por IP, bloqueos).** La herramienta también funciona sin proxy.
 
-- **Con un grupo:** pasa `--pool <file>` (o define `TOKVI_PROXIES`) y cada solicitud pasa por una salida de esa lista — una línea muerta hace fallar ese intento y la herramienta pasa a la siguiente (falla en cerrado mientras se proporciona un grupo; el grupo se vuelve a sondear al usarse).
-- **Sin un grupo:** la CLI imprime `running WITHOUT a proxy (direct)` y se conecta directamente. Nada sobre el registro, la acuñación de claves o la verificación cambia — solo desde dónde salen los paquetes.
-- Ejecuta `--screen` contra cualquiera de los dos modos: prueba las salidas que tengas (o la ruta directa) contra el proveedor antes de una ejecución real.
+- **Con un grupo:** pasa `--pool <file>` (o define `TOKVI_PROXIES`) y cada solicitud pasa por una salida de esa lista — una línea muerta hace fallar ese intento y la herramienta pasa a la siguiente (falla cerrada mientras se proporciona un grupo; el grupo se vuelve a sondear al usarse).
+- **Sin un grupo:** la CLI imprime `running WITHOUT a proxy (direct)` y se conecta directamente. Nada del registro, la acuñación de claves o la verificación cambia — solo desde dónde salen los paquetes.
+- Ejecuta `--screen` en cualquiera de los dos modos: prueba las salidas que tengas (o la ruta directa) contra el proveedor antes de una ejecución real.
 
 ## 📄 Archivos
 
 | Ruta | Contenido |
 | --- | --- |
 | `keys.txt` | una clave verificada en vivo por línea — ignorada por git |
-| `accounts.json` | usuario / correo electrónico / cuota / código / grupo |
+| `accounts.json` | nombre de usuario / correo electrónico / cuota / código / grupo |
 | `proxies.txt` | tus salidas — ignorado por git |
 | `outputs/` | registros de ejecución — ignorados por git |
 
 ## 🔌 Conectar a 9Router
 
-[9Router](https://9router.com) es un router autoalojado y compatible con OpenAI:
+[9Router](https://9router.com) es un router autoalojado compatible con OpenAI:
 
 ```bash
 node src/connect-9router.js --base http://localhost:20128 --password 123456
@@ -180,26 +186,27 @@ Predeterminados: `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model d
 
 ## 🔌 Conectar a OmniRoute
 
-[OmniRoute](https://omniroute.online) es un router autoalojado y compatible con OpenAI:
+[OmniRoute](https://omniroute.online) es un router autoalojado compatible con OpenAI:
 
 ```bash
 node src/connect-omniroute.js --base http://localhost:20128 --password 123456
 ```
 
 Predeterminados: `--prefix tokvi`, `--base-url https://tokvi.net/v1`, `--model deepseek-v4-flash-0731`. Los modelos se sirven como `tokvi/<model id>`.
+
 ## 🔑 Qué te da una clave
 
 | | |
 | --- | --- |
 | 🏢 Proveedor | **Tokvi** — [tokvi.net](https://tokvi.net) |
-| 🎁 Qué da el proveedor | 342.466 unidades (≈ $0,68) al registrarse |
+| 🎁 Qué da el proveedor | 342.466 unidades (≈ $0,68) al registrarte |
 | 🔑 Qué te da una clave | una clave en su propia cuenta, verificada por chat en `deepseek-v4-flash-0731` |
 | 🌐 Forma de la API | Compatible con OpenAI: `POST https://tokvi.net/v1/chat/completions` |
-| 🔒 Tus datos | solo se contacta a `tokvi.net` y a tu backend de buzón |
+| 🔒 Tus datos | solo se contacta con `tokvi.net` y tu backend de buzón |
 
 ## 🐞 Problemas
 
-Si Tokvi cambia su cuerpo de registro, plantilla de código o puertas, la herramienta se detiene ahí y lo indica. **[Abre un issue](../../issues)** con el comando y la salida exacta.
+Si Tokvi cambia su cuerpo de registro, plantilla de código o puertas, la herramienta se detiene ahí y lo indica. **[Abre un problema](../../issues)** con el comando y la salida exacta.
 
 ## 📄 Licencia
 
