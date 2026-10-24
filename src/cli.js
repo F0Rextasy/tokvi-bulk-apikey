@@ -45,7 +45,7 @@
  *   --alt-groups G   fallback groups, comma separated
  *   --no-checkin     skip the daily check-in (it is on by default here)
  *   --pool <file>    proxy list, one exit per line (env TOKVI_PROXIES) [optional]
- *   --tries N        exits tried per account before giving up           [2]
+ *   --exits N        exits tried per account before giving up           [6]
  *   --timeout MS     per-request timeout                             [60000]
  *   --verify-only    re-run every key in keys.txt through the chat gate
  *   --screen         only test the proxy list against Tokvi
@@ -53,7 +53,8 @@
  *
  * Zero dependencies. Node.js >= 18. Your proxy list is OPTIONAL: pass --pool
  * (or the TOKVI_PROXIES env) and every request goes through an exit from it;
- * without a pool the tool connects directly.
+ * a dead exit costs only its attempt (the next candidate takes over) and an
+ * all-dead pool ends the run non-zero; without a pool the tool runs direct.
  */
 
 const fs = require('fs');
@@ -87,6 +88,11 @@ const EMAILNATOR = 'https://www.emailnator.com';
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36';
 
+// Shared/disposable boxes carry other tenants' mail: only a message that names
+// this panel may supply the code (measured 2026-10-24: dddai read a stranger's
+// code from a shared box). Override: --brand / TOKVI_BRAND_RE.
+let BRAND = new RegExp(process.env.TOKVI_BRAND_RE || 'tokvi', 'i');
+
 // ------------------------------------------------------------------- options
 const argv = process.argv.slice(2);
 function arg(name, dflt) {
@@ -111,21 +117,25 @@ if (has('help') || has('h')) {
   --model <id>   model used for the live gate         [deepseek-v4.1-flash]
   --group <name> token group the key is created in                   [default]
   --pool <file>  proxy list, one exit per line (env TOKVI_PROXIES) [optional]
+  --exits N      exits tried per account before giving up                [6]
+  --brand RE     sender/subject fence for the code mail (env TOKVI_BRAND_RE)
 
-Requests go through the exits in your proxy list when one is provided (--pool
-or the TOKVI_PROXIES env). Without a pool the tool connects DIRECTLY.`);
+Requests go through the exits in your proxy list (--pool / env). A dead exit is
+skipped and the next candidate takes the attempt; if every candidate is dead the
+run ends non-zero. Without a pool the tool connects directly.`);
   process.exit(0);
 }
 
 const COUNT = Math.max(1, parseInt(arg('count', '5'), 10) || 5);
 const CONC = Math.min(8, Math.max(1, parseInt(arg('conc', '1'), 10) || 1));
 const GAP_MS = Math.max(0, parseInt(arg('gap', '1200'), 10) || 0);
-const TRIES = Math.max(1, parseInt(arg('tries', '2'), 10) || 2);
+const EXITS = Math.max(1, parseInt(arg('exits', '6'), 10) || 6);
 const TIMEOUT_MS = Math.max(5000, parseInt(arg('timeout', '60000'), 10) || 60000);
 const MODEL = arg('model', 'deepseek-v4-flash-0731');
 const ALT_MODELS = arg('alt-models', 'deepseek-v4.1-flash').split(',').map((s) => s.trim()).filter(Boolean);
 const GROUP = arg('group', 'default');
 const ALT_GROUPS = arg('alt-groups', '').split(',').map((s) => s.trim()).filter(Boolean);
+if (arg('brand')) BRAND = new RegExp(arg('brand'), 'i'); // --brand overrides the mail fence
 const CHECKIN = has('checkin') && !has('no-checkin'); // panel answers 签到功能未启用
 const VERIFY_ONLY = has('verify-only');
 const SCREEN = has('screen');
@@ -279,7 +289,7 @@ function loadExits() {
   const poolFile = fs.existsSync(path.resolve(poolArg)) ? path.resolve(poolArg) : path.resolve(ROOT, poolArg);
   if (!fs.existsSync(poolFile)) {
     // No pool = DIRECT mode: a proxy is recommended at scale (per-IP limits,
-    // bans) but the tool works without one. `null` is the direct sentinel.
+    // bans) but the published CLI works without one. `null` is the direct sentinel.
     console.log(`no proxy list at ${poolFile} — running WITHOUT a proxy (direct). Put exits there (or pass --pool) to route through them.`);
     return [null];
   }
@@ -290,6 +300,15 @@ function loadExits() {
   }
   return exits;
 }
+
+/** A dead exit, not a panel verdict — the flow rotates to the next candidate. */
+const isExitError = (e) =>
+  /proxy connect failed|proxy CONNECT refused|proxy timeout|connect timeout|connect failed|ETIMEDOUT|ECONNREFUSED|ECONNRESET|ECONNABORTED|EPIPE|ENETUNREACH|EHOSTUNREACH|EAI_AGAIN|socket hang up|secureConnect|TLS|handshake/i.test(
+    String((e && e.message) || e),
+  );
+
+/** `host:port` of the exit in play, or `direct` when the pool is empty. */
+const exitLabel = (e) => (e ? `${e.host}:${e.port}` : 'direct');
 
 async function screen(exits) {
   let ok = 0;
@@ -321,8 +340,25 @@ async function newMailbox(exit) {
   return { rail: 'emailnator', dotted, plain: `${local.replace(/\./g, '')}@${domain}` };
 }
 
-async function pollCodes(exit, box, { timeoutMs = 180000, pollMs = 5000, want = 3 } = {}) {
-  const seen = new Set();
+/**
+ * Ids already in the box, taken BEFORE the code is requested. Emailnator hands
+ * out PUBLIC shared boxes: a mail that was already there belongs to another
+ * tenant, and its code comes back as "incorrect or expired". A failed snapshot
+ * is not an empty box — it retries, then throws.
+ */
+async function inboxIds(exit, plain) {
+  for (let k = 0; k < 4; k++) {
+    try {
+      const r = await exitJson(exit, `${EMAILNATOR}/api/message-list`, { method: 'POST', body: { email: plain, limit: 20 } });
+      const msgs = r.json && r.json.messages;
+      if (Array.isArray(msgs)) return new Set(msgs.map((m) => String((m && m.id) || '')).filter(Boolean));
+    } catch (e) { /* retry */ }
+    await sleep(4000);
+  }
+  throw new Error('inbox snapshot failed (exits unhealthy)');
+}
+async function pollCodes(exit, box, { timeoutMs = 180000, pollMs = 5000, want = 3, seenIds = [] } = {}) {
+  const seen = new Set(seenIds instanceof Set ? seenIds : (seenIds || []).map(String));
   const out = [];
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline && out.length < want) {
@@ -334,8 +370,9 @@ async function pollCodes(exit, box, { timeoutMs = 180000, pollMs = 5000, want = 
     for (const m of msgs) {
       if (seen.has(m.id)) continue;
       seen.add(m.id);
+      if (!BRAND.test(`${m.from || ''} ${m.subject || ''}`)) continue; // the panel's own mail only
       const r = await exitJson(exit, `${EMAILNATOR}/api/message/${encodeURIComponent(m.id)}`).catch(() => null);
-      const plain = String(r ? r.body : '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      const plain = String(r ? String(r.text || '') : '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
       // tokvi's own template first: 您的验证码为: <strong>e18f62</strong> (6 mixed hex)
       const tpl = plain.match(/验证码[^0-9A-Za-z]{0,12}([0-9a-fA-F]{6})\b/);
       const gen = plain.match(/(?:code|verification|验证码|kodu)[^0-9A-Za-z]{0,24}([0-9a-fA-F]{6})\b/);
@@ -367,7 +404,10 @@ async function signUp(exit) {
   if (gates.register_enabled === false) throw new Error('register is disabled on the panel right now');
   let box = await newMailbox(exit);
   let sc = null;
+  let seenIds = new Set();
   for (let a = 0; a < 3; a++) {
+    // Shared box: snapshot the ids BEFORE the code is asked for (a new box re-snapshots).
+    seenIds = await inboxIds(exit, box.plain);
     sc = await exitJson(exit, `${BASE}/api/verification?email=${encodeURIComponent(box.plain)}`);
     const msg = String(sc.text || '');
     if (sc.json && sc.json.success) break;
@@ -377,7 +417,7 @@ async function signUp(exit) {
     break;
   }
   if (!(sc.json && sc.json.success)) throw new Error(`sendCode HTTP ${sc.status}: ${String(sc.text).slice(0, 140)}`);
-  const cands = await pollCodes(exit, box);
+  const cands = await pollCodes(exit, box, { seenIds });
   let reg = null;
   let used = null;
   for (const cand of cands) {
@@ -474,40 +514,57 @@ async function mint() {
   const exits = loadExits();
   if (SCREEN) return void (await screen(exits));
   const accounts = loadAccounts();
-  log(`weytoken · ${COUNT} key(s) · conc ${CONC} · exits ${exits.filter(Boolean).length || 'direct'} · keys land in keys.txt`);
+  const routes = exits[0] === null ? 1 : EXITS; // no pool = one direct attempt, there is nothing to rotate to
+  log(`tokvi · ${COUNT} key(s) · conc ${CONC} · exits ${exits.filter(Boolean).length || 'direct'} · up to ${routes} per account · keys land in keys.txt`);
   let made = 0;
+  let transportDead = 0;
   for (let round = 0; round < COUNT; round += CONC) {
     const jobs = [];
     for (let k = 0; k < CONC && round + k < COUNT; k++) {
       const i = round + k;
       jobs.push((async () => {
         let lastErr = null;
-        for (let t2 = 0; t2 < TRIES; t2++) {
-          const exit = exits[(i + t2) % exits.length];
+        let lastWasExit = false;
+        for (let a = 0; a < routes; a++) {
+          const exit = exits[(i + a) % exits.length];
           try {
             const rec = await signUp(exit);
-            if (!rec.key) { lastErr = new Error('no key material in the token response'); continue; }
+            if (!rec.key) { lastErr = new Error('no key material in the token response'); lastWasExit = false; continue; }
             const g = await chatGate(exit, rec.key);
             if (!g.ok) {
               recordDead(rec.key, g.status, g.sample);
               lastErr = new Error(`chat gate ${g.status}: ${g.sample}`);
-              accounts.push({ at: new Date().toISOString(), username: rec.username, email: rec.box.plain, exit: exit ? `${exit.host}:${exit.port}` : 'direct', gate: g.status });
+              accounts.push({ at: new Date().toISOString(), username: rec.username, email: rec.box.plain, exit: exitLabel(exit), gate: g.status });
               saveAccounts(accounts);
+              lastWasExit = false;
               continue;
             }
             appendKey(rec.key);
-            accounts.push({ at: new Date().toISOString(), username: rec.username, email: rec.box.plain, uid: rec.uid, quota: rec.quota, quotaAfterCheckin: rec.quotaAfterCheckin ?? null, checkin: rec.checkin ?? null, group: rec.usedGroup ?? null, exit: exit ? `${exit.host}:${exit.port}` : 'direct', key_masked: `${rec.key.slice(0, 8)}…`, gate: 200 });
+            accounts.push({ at: new Date().toISOString(), username: rec.username, email: rec.box.plain, uid: rec.uid, quota: rec.quota, quotaAfterCheckin: rec.quotaAfterCheckin ?? null, checkin: rec.checkin ?? null, group: rec.usedGroup ?? null, exit: exitLabel(exit), key_masked: `${rec.key.slice(0, 8)}…`, gate: 200 });
             saveAccounts(accounts);
             made++;
             log(`account ${i + 1} ✔ chat-200 ${MODEL} · ${rec.usedGroup || '?'} · quota ${rec.quota}${rec.quotaAfterCheckin ? ` → ${rec.quotaAfterCheckin} (checkin ${rec.checkin})` : ''} · ${rec.key.slice(0, 8)}…`);
             return;
-          } catch (e) { lastErr = e; }
+          } catch (e) {
+            lastErr = e;
+            lastWasExit = isExitError(e);
+            if (lastWasExit) {
+              const where = exit ? `exit ${a + 1}/${routes} ${exitLabel(exit)}` : `direct attempt ${a + 1}/${routes}`;
+              log(`account ${i + 1}: ${where} dead (${String(e.message).slice(0, 70)})${exit ? ' → next exit' : ''}`);
+            }
+          }
         }
+        if (lastWasExit) transportDead++;
         log(`account ${i + 1}: ${lastErr ? String(lastErr.message).slice(0, 140) : 'failed'}`);
       })());
     }
     await Promise.all(jobs);
     if (GAP_MS) await sleep(GAP_MS);
+  }
+  if (!made && transportDead === COUNT) {
+    const route = exits[0] === null ? 'direct mode (no proxy list)' : `${exits.length}-exit pool`;
+    console.error(`[fatal] no usable route — ${COUNT} account(s) × ${routes} candidate(s) over ${route}: every attempt died at the transport layer.`);
+    process.exit(1);
   }
   log(`done — ${made}/${COUNT} key(s) written to ${KEYS_FILE}`);
 }
